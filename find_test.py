@@ -1,6 +1,7 @@
 from collections import deque
 import numpy as np
 import random
+from heapq import heappush, heappop
 
 
 cmnds = ['LEFT', 'RIGHT', 'UP', 'DOWN']
@@ -22,16 +23,17 @@ def generate_grid(filename):
     return grid
 
 
-def transition(p, command, grid):
+def transition(p, command, grid, cost):
    
     rows, cols = grid.shape
     
     p_updated = np.zeros_like(p)
+    heuristic = 0 
     
     for i in range(rows):
         for j in range(cols):
             
-            if grid[i, j] == 1:
+            if grid[i, j] == 1 or p[i, j] == 0:
                 continue
       
             if command == "LEFT":
@@ -50,51 +52,60 @@ def transition(p, command, grid):
                 
             # the probability is transferred to the new cell
             else:
+                new_cost = cost + 1
                 p_updated[i_new, j_new] += p[i, j]
-    
-    return p_updated
+    for i in range(rows):
+        for j in range(cols):
+            if p_updated[i][j]!=0:
+                heuristic +=  (1 / p_updated[i, j])
+    # print(heuristic)
+    return p_updated, heuristic
 
 def shortest_sequence(grid, initial_prob):
-    queue = deque()
+    # queue = deque()
     prob_store = {}
     temp_list = [0]*len(cmnds)
+    hdict = {}
     action_list = []
     iter = 0
-    queue.append((initial_prob, []))
+    queue =[(0, initial_prob, [])]
+    
 
     while not (len(queue)==0):
         print("[Fringe size : %d] "%(len(queue)),end="\r")
-        p, seq = queue.popleft()
-        # print("====================================================== FRINGE =====================================================")
-        # # for i in queue:
-        # #     print(i[1])
-        # print(p, seq)
-        # print("===================================================================================================================")    
+        # p, seq = queue.popleft()
+
+        cost, p, seq = min(queue, key = lambda t: t[0])
+        queue.remove((cost, p, seq))
+        # print("============================")
+        # print(p)
+        # print("============================")
         
+
         if np.count_nonzero(p==0.0) == grid.shape[0] * grid.shape[1] - 1:
             return seq
         
         for i in range(0, len(cmnds)):
-            prob_store[cmnds[i]] = transition(p, cmnds[i], grid)
+            prob_store[cmnds[i]],hdict[cmnds[i]]  = transition(p, cmnds[i], grid, cost)
             temp_list[i] = np.count_nonzero(prob_store[cmnds[i]]==0)
         
         max_val = max(temp_list)
         options = [cmnds[i] for i in range(0,len(temp_list)) if temp_list[i]==max_val]
-
-        # index = random.choice(options)
+        
         for i in range(0,len(options)):
+            # print(prob_store[options[i]])
+            # print(options[i]," : ",hdict[options[i]])
             if len(options) == 1 or (len(seq) and options[i] != seq[-1]) or len(seq) == 0:
-                queue.append((prob_store[options[i]], seq + [options[i]]))
+                queue.append((hdict[options[i]], prob_store[options[i]], seq + [options[i]]))
+               
         # queue.append((prob_store[index], seq + [cmnds[index]]))
-
     return None       
 
 
-
-# filename = 'Thor23-SA74-VERW-Schematic (Classified).txt'
-filename = 'sample3.txt'
+filename = 'Thor23-SA74-VERW-Schematic (Classified).txt'
+# filename = 'sample3.txt'
 grid = generate_grid(filename)
-print(grid)
+# print(grid)
 
 
 rows, cols = grid.shape
