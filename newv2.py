@@ -11,8 +11,8 @@ from queue import PriorityQueue
 from heapq import heappush, heappop
 
 
-# cmnds = ['LEFT', 'RIGHT', 'UP', 'DOWN']
-cmnds = ['UP', 'RIGHT', 'DOWN', 'LEFT']
+cmnds = ['LEFT', 'RIGHT', 'UP', 'DOWN']
+# cmnds = ['UP', 'RIGHT', 'DOWN', 'LEFT']
 
 dirs = {(0,1),(1,0),(0,-1),(-1,0)}
 
@@ -62,7 +62,7 @@ def transition(p, command, grid):
 
 def shortest_sequence(grid, initial_prob):
     bestSeq = None
-    for i in range(0,1):
+    for i in range(0,10):
         greedySeq = greedy(grid, initial_prob)
         if bestSeq is None:
             bestSeq = greedySeq
@@ -80,7 +80,6 @@ def shortest_sequence(grid, initial_prob):
 
     # queue = [(0, initial_prob, [])]
     visited.add(initial_prob.tobytes())
-    hdict = {}
     newCost = {}
     costDict = {}
     sequence = {}
@@ -89,8 +88,8 @@ def shortest_sequence(grid, initial_prob):
     sequence[initial_prob.tobytes()] = []
 
     def getCost(p):
-        # return 1 / np.count_nonzero(p==0.0)
-        return costDict[p.tobytes()]
+        return 1 / np.count_nonzero(p==0.0)
+        # return costDict[p.tobytes()]
 
     def getHeuristicOld(p):
         rows,cols = p.shape
@@ -106,6 +105,16 @@ def shortest_sequence(grid, initial_prob):
         # if np.min(p) != 0: 
         #     return 1/np.min(p)
         # return 0      
+    
+    def getHeuristicv1(p: np.ndarray):
+        minY, maxY= p.shape[1],0
+        minX, maxX= p.shape[0],0
+        for i in range(0,p.shape[0]):
+            for j in range(0,p.shape[1]):
+                if p[i][j]!=0:
+                    minX, maxX =  min(minX,i),max(maxX,i)
+                    minY, maxY =  min(minY,j),max(maxY,j)
+        return abs(minX-maxX)+abs(minY-maxY)
 
     def getHeuristic(p:np.ndarray):
         maxVal = np.max(p)
@@ -138,64 +147,52 @@ def shortest_sequence(grid, initial_prob):
     seq_length_list = []
     best_heuristic = 999999999999
     while not queue.empty():
-        # print("[Fringe size : %d]"%(len(queue)), end="\r")
-        # cost, p, seq = queue.popleft()
-
-        # cost, p, seq = min(queue, key = lambda t: t[0])
-        # index = queue.index(max(queue, key = lambda t: len(t[2])))
-
         prio, element = queue.get()
         p = np.frombuffer(element,dtype=initial_prob.dtype).reshape(initial_prob.shape)
         cost = costDict[p.tobytes()]
         seq = sequence[p.tobytes()]
+        # print(p)
+        # print(seq)
 
-        # index = queue.index(min(queue, key = lambda t: t[0]))
-
-        # cost, p, seq = queue[index]
-        # queue.pop(index)
-
-        
         # print('-----------------------------------------------')
         # print(cost, p, seq)
         # print('-----------------------------------------------')
-        if getHeuristic(p) > best_heuristic:
+        if prio >= len(bestSeq):
             prune_count+=1
             continue 
+
+        print("[Fringe size : %d] [Pruned size : %d] [Current Seq size : %d] [Heuristic : %d]"%((queue.qsize()), prune_count, len(seq) , getHeuristic(p)), end="\r")
 
         # We know the the bestSequence will be less than equal to the one returned by greedy approach
         if not bestSeq is None and len(seq) >= len(bestSeq):
             prune_count+=1
-            continue       
+            continue 
+
         print("[Fringe size : %d] [Pruned size : %d] [Current Seq size : %d] [Heuristic : %d]"%(queue.qsize(), prune_count, len(seq) , getHeuristic(p)), end="\r")        
+        
         if np.count_nonzero(p==0.0) == grid.shape[0] * grid.shape[1] - 1:
             print("GOAL STATE")
-            # plt.imshow(p)
-            # plt.show()
             best_heuristic = getHeuristic(p)
             if len(bestSeq)>len(seq):
                 bestSeq = seq
                 print('len(bestSeq)>len(seq) | seq:',len(seq))
-                print('BestSeq update there fore')
+                print('BestSeq update therefore')
             continue
         
         for i in range(0, len(cmnds)):
             prob_store[cmnds[i]] = transition(p, cmnds[i], grid)
-            temp_list[i] = np.count_nonzero(prob_store[cmnds[i]]==0)
         
-        max_val = max(temp_list)
-       
-        # options = [cmnds[i] for i in range(0,len(temp_list)) if temp_list[i]==max_val]
         options = cmnds
         for i in range(0,len(options)):
             # if len(options) == 1 or (len(seq) and options[i] != seq[-1]) or len(seq) == 0  :
             newCost = cost + 1
-            priority =  newCost + getHeuristic(prob_store[options[i]]) + getHeuristic(prob_store[options[i]])
+            priority =  newCost + getHeuristicv1(prob_store[options[i]]) 
+            # print("Move: ",options[i],"|| cost %d || priority %d "%(cost,priority))
+            # print(prob_store[options[i]])
             if (prob_store[options[i]].tobytes() not in costDict or newCost < getCost(prob_store[options[i]])):
                 costDict[prob_store[options[i]].tobytes()] =  newCost
                 sequence[prob_store[options[i]].tobytes()] = seq + [options[i]]
                 seq_length_list.append(seq + [options[i]])
-                # queue.put((priority , prob_store[options[i]], seq + [options[i]]))
-                # queue.put(prob_store[options[i]].tobytes(), priority)
                 queue.put((priority, prob_store[options[i]].tobytes()))
 
                 visited.add(prob_store[options[i]].tobytes())
@@ -216,7 +213,7 @@ def start(schema, commands):
     print("Best Sequence: ",res)
     print(len(res))  
 
-start('reac.txt', cmnds)
+start('sample5.txt', cmnds)
 
 
 
