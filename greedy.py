@@ -91,19 +91,18 @@ def greedy(grid, p):
 
         if max_value == grid.shape[0] * grid.shape[1] - 1:
             break
-    return action_list    
-        
+    return action_list
 
 
-grid = generate_grid('sample5.txt')
-rows, cols = grid.shape        
-cmnds = ['LEFT', 'RIGHT', 'UP', 'DOWN']
-sequence = []
-p = np.zeros((rows, cols))
-for i in range(rows):
-    for j in range(cols):
-        if grid[i][j] != 1:
-            p[i][j] = 1.0 / ((rows * cols) - np.count_nonzero(grid))
+# grid = generate_grid('sample5.txt')
+# rows, cols = grid.shape        
+# cmnds = ['LEFT', 'RIGHT', 'UP', 'DOWN']
+# sequence = []
+# p = np.zeros((rows, cols))
+# for i in range(rows):
+#     for j in range(cols):
+#         if grid[i][j] != 1:
+#             p[i][j] = 1.0 / ((rows * cols) - np.count_nonzero(grid))
 
          
 # p = [[1.0 / ((rows * cols) - np.count_nonzero(grid)) for _ in range(rows)] for _ in range(cols)]            

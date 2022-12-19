@@ -1,20 +1,11 @@
-from collections import deque
 import numpy as np
-import random
-from heapq import heappush, heappop
-import time
 from queue import PriorityQueue
-import operator
-# import matplotlib.pyplot as plt
 from greedy import greedy
-from queue import PriorityQueue
-from heapq import heappush, heappop
 
 
 cmnds = ['LEFT', 'RIGHT', 'UP', 'DOWN']
 # cmnds = ['UP', 'RIGHT', 'DOWN', 'LEFT']
 
-dirs = {(0,1),(1,0),(0,-1),(-1,0)}
 
 def strToSchema(s:str):
         return [1 if c=='X' else 0 for c in s.split('\n')[0] ]
@@ -62,7 +53,7 @@ def transition(p, command, grid):
 
 def shortest_sequence(grid, initial_prob):
     bestSeq = None
-    for i in range(0,10):
+    for i in range(0,1):
         greedySeq = greedy(grid, initial_prob)
         if bestSeq is None:
             bestSeq = greedySeq
@@ -88,8 +79,8 @@ def shortest_sequence(grid, initial_prob):
     sequence[initial_prob.tobytes()] = []
 
     def getCost(p):
-        return 1 / np.count_nonzero(p==0.0)
-        # return costDict[p.tobytes()]
+        # return 1 / np.count_nonzero(p==0.0)
+        return costDict[p.tobytes()]
 
     def getHeuristicOld(p):
         rows,cols = p.shape
@@ -146,6 +137,7 @@ def shortest_sequence(grid, initial_prob):
     prune_count=0
     seq_length_list = []
     best_heuristic = 999999999999
+    min_h_so_far = 9999999999
     while not queue.empty():
         prio, element = queue.get()
         p = np.frombuffer(element,dtype=initial_prob.dtype).reshape(initial_prob.shape)
@@ -157,36 +149,46 @@ def shortest_sequence(grid, initial_prob):
         # print('-----------------------------------------------')
         # print(cost, p, seq)
         # print('-----------------------------------------------')
+        min_h_so_far = min(min_h_so_far, getHeuristicv1(p))
+
+        if getHeuristicv1(p) > min_h_so_far:
+            prune_count+=1
+            continue
+
         if prio >= len(bestSeq):
             prune_count+=1
             continue 
-
-        print("[Fringe size : %d] [Pruned size : %d] [Current Seq size : %d] [Heuristic : %d]"%((queue.qsize()), prune_count, len(seq) , getHeuristic(p)), end="\r")
+#
+        # print("[Fringe size : %d] [Pruned size : %d] [Current Seq size : %d] [Heuristic : %d]"%((queue.qsize()), prune_count, len(seq) , getHeuristic(p)), end="\r")
 
         # We know the the bestSequence will be less than equal to the one returned by greedy approach
         if not bestSeq is None and len(seq) >= len(bestSeq):
             prune_count+=1
             continue 
 
-        print("[Fringe size : %d] [Pruned size : %d] [Current Seq size : %d] [Heuristic : %d]"%(queue.qsize(), prune_count, len(seq) , getHeuristic(p)), end="\r")        
-        
+        print("[Fringe size : %d] [Pruned size : %d] [Current Seq size : %d] [Heuristic : %d]"%(queue.qsize(), prune_count, len(seq) , getHeuristicv1(p)), end="\r")        
+
         if np.count_nonzero(p==0.0) == grid.shape[0] * grid.shape[1] - 1:
             print("GOAL STATE")
-            best_heuristic = getHeuristic(p)
+            best_heuristic = getHeuristicv1(p)
+            # print('p, h', p, getHeuristicv1(p))
             if len(bestSeq)>len(seq):
                 bestSeq = seq
                 print('len(bestSeq)>len(seq) | seq:',len(seq))
                 print('BestSeq update therefore')
             continue
-        
+
         for i in range(0, len(cmnds)):
             prob_store[cmnds[i]] = transition(p, cmnds[i], grid)
+            temp_list[i] = np.count_nonzero(prob_store[cmnds[i]]==0)
         
+        max_val = max(temp_list)
+        # options = [cmnds[i] for i in range(0,len(temp_list)) if temp_list[i]==max_val]
         options = cmnds
         for i in range(0,len(options)):
             # if len(options) == 1 or (len(seq) and options[i] != seq[-1]) or len(seq) == 0  :
             newCost = cost + 1
-            priority =  newCost + getHeuristicv1(prob_store[options[i]]) 
+            priority =  newCost + max(getHeuristicv1(prob_store[options[i]]) , getHeuristicTest(prob_store[options[i]]))
             # print("Move: ",options[i],"|| cost %d || priority %d "%(cost,priority))
             # print(prob_store[options[i]])
             if (prob_store[options[i]].tobytes() not in costDict or newCost < getCost(prob_store[options[i]])):
@@ -213,7 +215,7 @@ def start(schema, commands):
     print("Best Sequence: ",res)
     print(len(res))  
 
-start('sample5.txt', cmnds)
+start('reactor.txt', cmnds)
 
 
 
