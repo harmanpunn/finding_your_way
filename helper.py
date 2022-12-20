@@ -47,3 +47,17 @@ def transition(p, command, grid):
                 p_updated[i_new, j_new] += p[i, j]
     
     return p_updated
+
+def getMove(p1,p2):
+    x1, y1 = p1
+    x2, y2 = p2
+    if x2 == x1 and y2 == y1:
+        return 'NO MOVE'
+    if x2 == x1 and y2 < y1:
+        return 'LEFT'
+    if x2 == x1 and y2 > y1:
+        return 'RIGHT'
+    if x2 > x1 and y2 == y1:
+        return 'DOWN'
+    if x2 < x1 and y2 == y1:
+        return 'UP'   
