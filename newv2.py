@@ -151,9 +151,9 @@ def shortest_sequence(grid, initial_prob):
         # print('-----------------------------------------------')
         min_h_so_far = min(min_h_so_far, getHeuristicv1(p))
 
-        if getHeuristicv1(p) > min_h_so_far:
-            prune_count+=1
-            continue
+        # if getHeuristicv1(p) > min_h_so_far:
+        #     prune_count+=1
+        #     continue
 
         if prio >= len(bestSeq):
             prune_count+=1
@@ -184,11 +184,12 @@ def shortest_sequence(grid, initial_prob):
         
         max_val = max(temp_list)
         # options = [cmnds[i] for i in range(0,len(temp_list)) if temp_list[i]==max_val]
+        # filter options based on the sum of length of distances between all non-zero points in the belief matrix
         options = cmnds
         for i in range(0,len(options)):
             # if len(options) == 1 or (len(seq) and options[i] != seq[-1]) or len(seq) == 0  :
             newCost = cost + 1
-            priority =  newCost + max(getHeuristicv1(prob_store[options[i]]) , getHeuristicTest(prob_store[options[i]]))
+            priority =  newCost + getHeuristicv1(prob_store[options[i]]) 
             # print("Move: ",options[i],"|| cost %d || priority %d "%(cost,priority))
             # print(prob_store[options[i]])
             if (prob_store[options[i]].tobytes() not in costDict or newCost < getCost(prob_store[options[i]])):
@@ -215,7 +216,7 @@ def start(schema, commands):
     print("Best Sequence: ",res)
     print(len(res))  
 
-start('reactor.txt', cmnds)
+start('sample5.txt', cmnds)
 
 
 
