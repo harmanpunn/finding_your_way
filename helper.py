@@ -3,6 +3,7 @@ import numpy as np
 
 cmnds = ['UP', 'LEFT', 'DOWN', 'RIGHT']
 
+# Setting 'X' = 1 ie. blocked and '_' = 0 ie. unblocked
 def strToSchema(s:str):
         return [1 if c=='X' else 0 for c in s.split('\n')[0] ]
 
